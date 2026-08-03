@@ -477,6 +477,7 @@ pub(crate) fn ensure_singlepass_artifact_size(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn activate(
     wasm: &[u8],
     codehash: &Bytes32,
