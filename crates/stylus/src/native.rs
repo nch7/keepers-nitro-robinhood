@@ -485,6 +485,7 @@ pub fn activate(
     page_limit: u16,
     debug: bool,
     gas: &mut u64,
+    op_limit: u32,
 ) -> Result<(ProverModule, StylusData)> {
     let (module, stylus_data) = ProverModule::activate(
         wasm,
@@ -494,6 +495,7 @@ pub fn activate(
         page_limit,
         debug,
         gas,
+        op_limit.try_into()?,
     )?;
 
     Ok((module, stylus_data))
