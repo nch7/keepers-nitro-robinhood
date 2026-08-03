@@ -8,10 +8,11 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/spf13/pflag"
+
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/spf13/pflag"
 )
 
 var ErrStylusCallDepthExceeded = errors.New("stylus call depth exceeded")
@@ -98,20 +99,6 @@ var DefaultStylusTargetConfig = StylusTargetConfig{
 	NativeStackSize:         0,   // 0 means use the Wasmer default (1 MB)
 	MaxSinglepassOutputSize: 10 * 1024 * 1024,
 	MaxWavmOps:              1 << 23,
-}
-
-// this is what CLI sees, with uncofigurables remaining emtpy
-var DefaultCLIStylusTargetConfig = StylusTargetConfig{
-	Arm64:                   DefaultTargetDescriptionArm,
-	Amd64:                   DefaultTargetDescriptionX86,
-	Host:                    "",
-	ExtraArchs:              []string{string(rawdb.TargetWavm)},
-	AllowFallback:           true,
-	MaxOpenPages:            128, // fits the default stylus pageLimit; 0 disables the limit
-	MaxStylusCallDepth:      0,   // 0 disables the limit
-	NativeStackSize:         0,   // 0 means use the Wasmer default (1 MB)
-	MaxSinglepassOutputSize: 0,
-	MaxWavmOps:              0,
 }
 
 func StylusTargetConfigAddOptions(prefix string, f *pflag.FlagSet) {

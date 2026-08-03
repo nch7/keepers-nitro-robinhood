@@ -489,10 +489,7 @@ pub fn wasm_to_wavm(
     /// emits an instruction, enforcing the `max_ops` limit (0 means unlimited)
     macro_rules! emit {
         ($inst:expr_2021) => {{
-            ensure!(
-                max_ops == 0 || out.len() < max_ops,
-                "too many wavm opcodes"
-            );
+            ensure!(max_ops == 0 || out.len() < max_ops, "too many wavm opcodes");
             out.push($inst);
         }};
     }
