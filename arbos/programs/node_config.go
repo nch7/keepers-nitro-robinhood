@@ -48,9 +48,13 @@ func (c *StylusTargetConfig) WasmTargets() []rawdb.WasmTarget {
 }
 
 func (c *StylusTargetConfig) SetUnconfigurableDefaults() {
-	// override non-configurable
-	c.MaxWavmOps = DefaultStylusTargetConfig.MaxWavmOps
-	c.MaxSinglepassOutputSize = DefaultStylusTargetConfig.MaxSinglepassOutputSize
+	// override non-configurables, if not configured from test
+	if c.MaxWavmOps == 0 {
+		c.MaxWavmOps = DefaultStylusTargetConfig.MaxWavmOps
+	}
+	if c.MaxSinglepassOutputSize == 0 {
+		c.MaxSinglepassOutputSize = DefaultStylusTargetConfig.MaxSinglepassOutputSize
+	}
 }
 
 func (c *StylusTargetConfig) Validate() error {
