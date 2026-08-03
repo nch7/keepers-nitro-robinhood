@@ -721,8 +721,11 @@ func getCraneliftAsm(
 	wasmStore := db.Database().WasmStore()
 	if wasmStore != nil {
 		batch := wasmStore.NewBatch()
-		rawdb.WriteActivatedAsm(batch, craneliftTarget, moduleHash, asm)
-		if err := batch.Write(); err != nil {
+		err := rawdb.WriteActivatedAsm(batch, craneliftTarget, moduleHash, asm)
+		if err == nil {
+			err = batch.Write()
+		}
+		if err != nil {
 			log.Warn("failed to persist cranelift ASM to wasm store, will recompile on next overflow",
 				"program", address, "err", err)
 		}

@@ -2864,7 +2864,12 @@ func checkWasmStoreContent(t *testing.T, wasmDB ethdb.KeyValueStore, expectedTar
 					t.Fatalf("Failed to read activated asm for target: %v, module: %v", target, module)
 				}
 			}()
-			return rawdb.ReadActivatedAsm(wasmDB, wasmTarget, module)
+			val, err := rawdb.ReadActivatedAsm(wasmDB, wasmTarget, module)
+			if err != nil {
+				t.Fatalf("read activated asm failed: %w", err)
+				return nil
+			}
+			return val
 		}()
 	}
 	for _, module := range modules {
