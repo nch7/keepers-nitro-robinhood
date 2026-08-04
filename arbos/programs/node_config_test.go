@@ -8,73 +8,53 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func TestGetArbNodeConfig_NilReturnsNil(t *testing.T) {
+func compareArbNodeConfig(t *testing.T, want *StylusTargetConfig, got *StylusTargetConfig) {
+	require.NotNil(t, got)
+	require.Equal(t, want.Arm64, got.Arm64)
+	require.Equal(t, want.Amd64, got.Amd64)
+	require.Equal(t, want.Host, got.Host)
+	require.Equal(t, want.ExtraArchs, got.ExtraArchs)
+	require.Equal(t, want.AllowFallback, got.AllowFallback)
+	require.Equal(t, want.MaxOpenPages, got.MaxOpenPages)
+	require.Equal(t, want.MaxStylusCallDepth, got.MaxStylusCallDepth)
+	require.Equal(t, want.NativeStackSize, got.NativeStackSize)
+	require.Equal(t, want.MaxSinglepassOutputSize, got.MaxSinglepassOutputSize)
+	require.Equal(t, want.MaxWavmOps, got.MaxWavmOps)
+}
+
+func TestGetArbNodeConfig_NilReturnsDefault(t *testing.T) {
 	db := state.NewDatabaseForTesting()
 	statedb, _ := state.New(types.EmptyRootHash, db)
-	require.Nil(t, GetArbNodeConfig(statedb), "never-set config should return nil")
+	compareArbNodeConfig(t, &DefaultStylusTargetConfig, GetStylusConfig(statedb))
 }
 
 func TestGetArbNodeConfig_WrongTypeReturnsNil(t *testing.T) {
 	db := state.NewDatabaseForTesting()
 	db.SetArbNodeConfig("not a *ArbNodeConfig")
 	statedb, _ := state.New(types.EmptyRootHash, db)
-	require.Nil(t, GetArbNodeConfig(statedb),
-		"wrong-type storage is a wiring bug; fail-open is safe because all limits "+
-			"gated by this config are off-chain only")
+	compareArbNodeConfig(t, &DefaultStylusTargetConfig, GetStylusConfig(statedb))
 }
 
 func TestGetArbNodeConfig_RoundTrips(t *testing.T) {
 	db := state.NewDatabaseForTesting()
-	want := &ArbNodeConfig{
+	want := &StylusTargetConfig{
+		Arm64:                   "arm64-test-target",
+		Amd64:                   "amd64-test-target",
+		Host:                    "host-test-target",
+		ExtraArchs:              []string{string(rawdb.TargetWavm), string(rawdb.TargetArm64)},
+		AllowFallback:           false,
 		MaxOpenPages:            42,
 		MaxStylusCallDepth:      5,
+		NativeStackSize:         2 * 1024 * 1024,
 		MaxSinglepassOutputSize: 12 * 1024 * 1024,
+		MaxWavmOps:              1 << 20,
 	}
 	db.SetArbNodeConfig(want)
 	statedb, _ := state.New(types.EmptyRootHash, db)
-	got := GetArbNodeConfig(statedb)
-	require.NotNil(t, got)
-	require.Equal(t, want.MaxOpenPages, got.MaxOpenPages)
-	require.Equal(t, want.MaxStylusCallDepth, got.MaxStylusCallDepth)
-	require.Equal(t, want.MaxSinglepassOutputSize, got.MaxSinglepassOutputSize)
-}
-
-func TestGetMaxSinglepassOutputSize(t *testing.T) {
-	db := state.NewDatabaseForTesting()
-	statedb, _ := state.New(types.EmptyRootHash, db)
-	require.Equal(t, DefaultMaxSinglepassOutputSize, getMaxSinglepassOutputSize(statedb))
-
-	db.SetArbNodeConfig(&ArbNodeConfig{})
-	require.Zero(t, getMaxSinglepassOutputSize(statedb))
-
-	const limit = 64 * 1024
-	db.SetArbNodeConfig(&ArbNodeConfig{MaxSinglepassOutputSize: limit})
-	require.Equal(t, uint64(limit), getMaxSinglepassOutputSize(statedb))
-
-	otherDB := state.NewDatabaseForTesting()
-	otherStateDB, _ := state.New(types.EmptyRootHash, otherDB)
-	otherDB.SetArbNodeConfig(&ArbNodeConfig{MaxSinglepassOutputSize: 2 * limit})
-	require.Equal(t, uint64(2*limit), getMaxSinglepassOutputSize(otherStateDB))
-	require.Equal(t, uint64(limit), getMaxSinglepassOutputSize(statedb))
-}
-
-// Validate() only logs — we just assert it doesn't panic across the cases that
-// trigger each log branch, including the edge between warn threshold and safe.
-func TestArbNodeConfig_Validate_DoesNotPanic(t *testing.T) {
-	cases := []ArbNodeConfig{
-		{},                      // all zero — all checks skipped
-		{MaxOpenPages: 1},       // below open-pages warn threshold
-		{MaxOpenPages: 128},     // above open-pages warn threshold
-		{MaxStylusCallDepth: 1}, // below call-depth warn threshold
-		{MaxStylusCallDepth: 2}, // exactly at call-depth warn threshold
-		{MaxStylusCallDepth: 8}, // above call-depth warn threshold
-		{MaxOpenPages: 128, MaxStylusCallDepth: 8}, // both set
-	}
-	for _, c := range cases {
-		c.Validate()
-	}
+	compareArbNodeConfig(t, want, GetStylusConfig(statedb))
 }

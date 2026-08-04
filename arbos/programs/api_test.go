@@ -56,7 +56,7 @@ func TestApiClosuresMultiGas_GetBytes32(t *testing.T) {
 func buildAddPagesTestHandler(t *testing.T, coinbase common.Address, runCtx *core.MessageRunContext, maxPages, pageLimit uint16, arbosVersion uint64) (RequestHandler, vm.StateDB, *MemoryModel) {
 	t.Helper()
 	db := state.NewDatabaseForTesting()
-	db.SetArbNodeConfig(&ArbNodeConfig{MaxOpenPages: maxPages})
+	db.SetArbNodeConfig(&StylusTargetConfig{MaxOpenPages: maxPages})
 	statedb, _ := state.New(types.EmptyRootHash, db)
 	evm := vm.NewEVM(vm.BlockContext{Coinbase: coinbase, ArbOSVersion: arbosVersion}, statedb, params.TestChainConfig, vm.Config{})
 	caller := common.Address{}
@@ -381,7 +381,7 @@ func buildEnforceTestArgs(t *testing.T, maxPages uint16, setConfig bool, arbosVe
 	t.Helper()
 	db := state.NewDatabaseForTesting()
 	if setConfig {
-		db.SetArbNodeConfig(&ArbNodeConfig{MaxOpenPages: maxPages})
+		db.SetArbNodeConfig(&StylusTargetConfig{MaxOpenPages: maxPages})
 	}
 	statedb, _ := state.New(types.EmptyRootHash, db)
 	evm := vm.NewEVM(vm.BlockContext{ArbOSVersion: arbosVersion}, statedb, params.TestChainConfig, vm.Config{})

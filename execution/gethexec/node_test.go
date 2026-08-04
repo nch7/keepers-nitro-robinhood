@@ -4,28 +4,10 @@
 package gethexec
 
 import (
-	"strconv"
 	"testing"
 
-	"github.com/spf13/pflag"
+	"github.com/offchainlabs/nitro/arbos/programs"
 )
-
-func TestMaxSinglepassOutputSizeFlag(t *testing.T) {
-	flags := pflag.NewFlagSet(t.Name(), pflag.ContinueOnError)
-	StylusTargetConfigAddOptions("stylus-target", flags)
-	const limit uint64 = 12 * 1024 * 1024
-	value := "--stylus-target.max-singlepass-output-size=" + strconv.FormatUint(limit, 10)
-	if err := flags.Parse([]string{value}); err != nil {
-		t.Fatal(err)
-	}
-	got, err := flags.GetUint64("stylus-target.max-singlepass-output-size")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got != limit {
-		t.Fatalf("expected Singlepass output limit %d, got %d", limit, got)
-	}
-}
 
 func TestStylusTargetConfigValidateNativeStackSize(t *testing.T) {
 	tests := []struct {
@@ -43,7 +25,7 @@ func TestStylusTargetConfigValidateNativeStackSize(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := DefaultStylusTargetConfig
+			c := programs.DefaultStylusTargetConfig
 			c.NativeStackSize = tt.size
 			err := c.Validate()
 			if tt.wantErr && err == nil {

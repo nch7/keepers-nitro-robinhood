@@ -362,6 +362,7 @@ impl Module {
         debug_funcs: bool,
         stylus_data: Option<StylusData>,
         version: u16,
+        mut total_code_limit: usize,
     ) -> Result<Module> {
         let mut code = Vec::new();
         let mut func_type_idxs: Vec<u32> = Vec::new();
@@ -457,7 +458,7 @@ impl Module {
         for c in &bin.codes {
             let idx = code.len();
             let func_ty = func_types[idx].clone();
-            code.push(Function::new(
+            let func = Function::new(
                 &c.locals,
                 |code| {
                     wasm_to_wavm(
@@ -469,11 +470,20 @@ impl Module {
                         func_type_idxs[idx],
                         internals_offset,
                         bin_name,
+                        total_code_limit,
                     )
                 },
                 func_ty.clone(),
                 &types,
-            )?);
+            )?;
+            if total_code_limit > 0 {
+                let func_code_len = func.code.len();
+                if func_code_len >= total_code_limit {
+                    bail!("too many wavm opcodes")
+                }
+                total_code_limit -= func_code_len;
+            }
+            code.push(func);
         }
         code.extend(internals);
         ensure!(
@@ -624,6 +634,7 @@ impl Module {
         debug_funcs: bool,
         stylus_data: Option<StylusData>,
         version: u16,
+        code_limit: usize,
     ) -> Result<Module> {
         Self::from_binary(
             bin,
@@ -633,6 +644,7 @@ impl Module {
             debug_funcs,
             stylus_data,
             version,
+            code_limit,
         )
     }
 
@@ -1360,7 +1372,7 @@ impl Machine {
             self.debug_info = true;
         }
 
-        let module = Module::from_user_binary(&bin, debug_funcs, Some(stylus_data), version)?;
+        let module = Module::from_user_binary(&bin, debug_funcs, Some(stylus_data), version, 0)?;
         let hash = module.hash();
         self.add_stylus_module(hash, module.into_bytes());
         Ok(hash)
@@ -1431,6 +1443,7 @@ impl Machine {
                 debug_funcs,
                 None,
                 0, // version only applies to user (Stylus) modules, not system libraries
+                0,
             )?;
             for (name, &func) in &*module.func_exports {
                 let ty = module.func_types[func as usize].clone();
@@ -1468,6 +1481,7 @@ impl Machine {
             debug_funcs,
             stylus_data,
             version,
+            0,
         )?);
 
         // Build the entrypoint module
