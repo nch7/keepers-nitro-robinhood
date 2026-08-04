@@ -4,20 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
-## [v3.11.3-rc.2](https://github.com/OffchainLabs/nitro/compare/v3.11.3-rc.1...v3.11.3-rc.2) - 2026-07-16
+## [v3.11.3](https://github.com/OffchainLabs/nitro/compare/v3.11.2...v3.11.3) - 2026-07-29
+
+### Configuration
+
+- Added `execution.stylus-target.max-singlepass-output-size` to limit Singlepass compiler output per Stylus module, defaults to 10 MiB. [[commit]](https://github.com/OffchainLabs/nitro/commit/4072e6103dc5334ba4baea0381c75a4af1dc5240)
+
+### Fixed
+
+- Capture panics on prefetch-tx execution and log them instead of returning. [[commit]](https://github.com/OffchainLabs/nitro/commit/37ea62ee48b233a71792e008246cf0163f2e0c93)
+- Filter retryable submissions by who actually gets funds, and catch filtered L1 senders/depositors that previously slipped through.[[commit]](https://github.com/OffchainLabs/nitro/commit/b668bd3243c8c6392dcf86d1ae06ddccc258493d)
 
 ### Changed
 
 - Filtered transactions rejected by the sequencer now return the RPC error message "Transaction rejected by chain policy" instead of the generic "internal error". [[commit]](https://github.com/OffchainLabs/nitro/commit/df606b3a3ae62cf19cd44f3ce54037d03400a9f0)
-- Filtered-tx reports are now logged node-side when reported, tagged with the producer (`prechecker`/`sequencer`), with unbounded fields (raw transaction and event log data) truncated to keep entries compact. [[commit]](https://github.com/OffchainLabs/nitro/commit/6f82a0dfdb256846a25228b7269a7a4b8165f8aa)
+- Filtered-tx reports are now logged node-side when reported. Unbounded fields truncated to keep entries compact. [[commit]](https://github.com/OffchainLabs/nitro/commit/6f82a0dfdb256846a25228b7269a7a4b8165f8aa)
 - `cmd/filtering-report` forwarder no longer logs the full report body; its forward success/failure logs now include only the report id and tx hash. [[commit]](https://github.com/OffchainLabs/nitro/commit/6f82a0dfdb256846a25228b7269a7a4b8165f8aa)
 - Onchain-filtered transactions now trace (e.g. `debug_traceTransaction`) with the error message "Transaction rejected by chain policy", matching the RPC rejection message. [[commit]](https://github.com/OffchainLabs/nitro/commit/e1a629fad1f1a87dea3e46263b022c5747d2677c)
 
-## [v3.11.3-rc.1](https://github.com/OffchainLabs/nitro/compare/v3.11.2...v3.11.3-rc.1) - 2026-07-15
-
-### Fixed
-
--  Filter retryable submissions by who actually gets funds, and catch filtered L1 senders/depositors that previously slipped through.[[commit]](https://github.com/OffchainLabs/nitro/commit/b668bd3243c8c6392dcf86d1ae06ddccc258493d)
 
 ## [v3.11.2](https://github.com/OffchainLabs/nitro/compare/v3.11.1...v3.11.2) - 2026-06-30
 
