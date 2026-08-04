@@ -1474,7 +1474,7 @@ func testMemoryGrowMachineLimit(t *testing.T, jit bool) {
 func testMaxStylusOpenPages(t *testing.T, jit bool) {
 	const pageLimit uint16 = 20
 	builder, auth, cleanup := setupProgramTest(t, jit, func(b *NodeBuilder) {
-		b.execConfig.StylusTarget.MaxStylusOpenPages = pageLimit
+		b.execConfig.StylusTarget.MaxOpenPages = pageLimit
 	})
 	ctx := builder.ctx
 	l2info := builder.L2Info
@@ -1544,7 +1544,7 @@ func TestProgramDelayedInboxPageLimitBypassNative(t *testing.T) {
 func testDelayedInboxPageLimitBypass(t *testing.T, jit bool) {
 	const pageLimit uint16 = 20
 	builder, auth, cleanup := setupProgramTest(t, jit, func(b *NodeBuilder) {
-		b.execConfig.StylusTarget.MaxStylusOpenPages = pageLimit
+		b.execConfig.StylusTarget.MaxOpenPages = pageLimit
 	})
 	ctx := builder.ctx
 	defer cleanup()
@@ -1577,7 +1577,7 @@ func testMaxStylusOpenPagesInitialFootprint(t *testing.T, jit bool) {
 	// arbos/programs/programs.go.
 	const pageLimit uint16 = 50
 	builder, auth, cleanup := setupProgramTest(t, jit, func(b *NodeBuilder) {
-		b.execConfig.StylusTarget.MaxStylusOpenPages = pageLimit
+		b.execConfig.StylusTarget.MaxOpenPages = pageLimit
 	})
 	ctx := builder.ctx
 	l2info := builder.L2Info
@@ -1735,7 +1735,7 @@ func testNestedStylusCumulativeFootprintNodeLevel(t *testing.T, jit bool) {
 	// node-level MaxOpenPages path this test is designed to exercise.
 	builder, auth, cleanup := setupProgramTest(t, jit, func(b *NodeBuilder) {
 		b.WithArbOSVersion(params.ArbosVersion_51)
-		b.execConfig.StylusTarget.MaxStylusOpenPages = pageLimit
+		b.execConfig.StylusTarget.MaxOpenPages = pageLimit
 	})
 	ctx := builder.ctx
 	l2info := builder.L2Info
@@ -3443,7 +3443,7 @@ func TestProgramSinglepassOutputSizeLimit(t *testing.T) {
 
 	statedb, err := builder.L2.ExecNode.Backend.ArbInterface().BlockChain().State()
 	Require(t, err)
-	nodeConfig := programs.GetArbNodeConfig(statedb)
+	nodeConfig := programs.GetStylusConfig(statedb)
 	if nodeConfig == nil || nodeConfig.MaxSinglepassOutputSize != maxOutputSize {
 		t.Fatalf("expected Singlepass output limit %d, got: %+v", maxOutputSize, nodeConfig)
 	}
