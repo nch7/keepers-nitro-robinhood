@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## Unreleased
+
+### Added
+
+- Parent chain headers with the Glamsterdam devnet-8 fields `blockAccessListHash` (EIP-7928) and `slotNumber` (EIP-7843) are now decoded and reproduce the canonical block hash. [[commit]](https://github.com/OffchainLabs/nitro/commit/db8ff47bc6a38fcf9ad05f8aabdeef72812751d0)
+
 ## [v3.11.3](https://github.com/OffchainLabs/nitro/compare/v3.11.2...v3.11.3) - 2026-07-29
 
 ### Configuration
