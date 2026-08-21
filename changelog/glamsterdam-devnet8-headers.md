@@ -1,2 +1,2 @@
 ### Ignored
-- Bump go-ethereum: backport Glamsterdam devnet-8 header fields (changelog updated directly)
+- Bump go-ethereum: backport Glamsterdam header fields (changelog updated directly)
