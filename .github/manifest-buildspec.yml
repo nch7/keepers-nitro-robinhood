@@ -19,7 +19,6 @@ phases:
           exit 1
         fi
         git checkout --force --detach "$REF"
-
       - COMMIT_HASH=$(git rev-parse --short=7 HEAD || echo "latest")
       - >-
         VERSION_TAG=$(git tag --points-at HEAD | sed '/-/!s/$/_/' | sort -rV |
