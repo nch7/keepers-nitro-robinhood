@@ -15,6 +15,13 @@ else
 endif
 
 
+# The Dockerfile always defines NITRO_VERSION, so test the value, not the origin.
+ifeq ($(strip $(NITRO_VERSION)),)
+ ifneq ($(strip $(NITRO_COMMIT)),)
+  NITRO_VERSION := $(or $(strip $(NITRO_TAG)),$(strip $(NITRO_BRANCH)))-$(strip $(NITRO_COMMIT))
+ endif
+endif
+
 ifneq ($(origin NITRO_VERSION),undefined)
  GOLANG_LDFLAGS += -X github.com/offchainlabs/nitro/cmd/util/confighelpers.version=$(NITRO_VERSION)
 endif
