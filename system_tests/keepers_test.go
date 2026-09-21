@@ -39,6 +39,8 @@ func TestKeepersSequentialSimulationAndInsertion(t *testing.T) {
 	Require(t, err)
 	address := receipt.ContractAddress
 	client := builder.L2.Client.Client()
+	headBefore, err := builder.L2.Client.HeaderByNumber(ctx, nil)
+	Require(t, err)
 	call := func(data string) map[string]any {
 		return map[string]any{"from": owner, "to": address, "gas": "0x1e8480", "data": data}
 	}
@@ -75,6 +77,11 @@ func TestKeepersSequentialSimulationAndInsertion(t *testing.T) {
 		}(n)
 	}
 	wg.Wait()
+	headAfter, err := builder.L2.Client.HeaderByNumber(ctx, nil)
+	Require(t, err)
+	if headBefore.Hash() != headAfter.Hash() {
+		t.Fatal("simulations changed the canonical head or state root")
+	}
 
 	// The integrated feed observer makes the already executed head available.
 	builder.L2.ExecNode.KeepersFeedStatus("test", true, 0)

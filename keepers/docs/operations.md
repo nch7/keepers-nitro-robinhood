@@ -25,7 +25,9 @@ of September 17; the launcher uses Nitro's native RFC 7692 client.
 1. Commit/push the Geth fork first, update Nitro's submodule pin, then commit/push
    Nitro. On the server, pull the reviewed revision and update recursive submodules.
 2. Run `keepers/deploy/build.sh`. It rejects tracked dirty source and produces an
-   image tagged by the exact Nitro commit, using the upstream Dockerfile.
+   image tagged by the exact Nitro commit, using the upstream Dockerfile. Its
+   reported version retains `v3.11.4` with Keepers commit build metadata so the
+   upstream minimum-version alerts continue to work.
 3. Create a `keepers` service account and a writable local-NVMe datadir. Store a
    private copy of `node.example.json` in `/etc/keepers-nitro-robinhood/node.json`,
    fill Ethereum endpoints, and restrict access to the service account.
@@ -38,7 +40,8 @@ of September 17; the launcher uses Nitro's native RFC 7692 client.
 The actual v3.11.4 Dockerfile uses `/home/user/.arbitrum`. The launcher mounts that
 path and runs with the service account's numeric UID/GID; it does not use the
 conflicting `/home/nitro` example from the current node guide. RPC binds to host
-loopback by default. The launcher uses `forwarding-target=null`: this is a local
+loopback by default. Metrics are enabled and published on host loopback port 6070
+(configurable with `KEEPERS_METRICS_PORT`). The launcher uses `forwarding-target=null`: this is a local
 read/simulation node, not a transaction forwarding service.
 
 No server is implicitly selected and no live deployment is performed by setup.

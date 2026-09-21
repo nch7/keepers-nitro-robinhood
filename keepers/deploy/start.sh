@@ -16,6 +16,7 @@ ARGS=(--conf.file=/run/keepers/node.json
  --node.feed.input.application-timeout=20s
  --execution.forwarding-target=null
  --execution.keepers.enabled=true
+ --metrics --metrics-server.addr=0.0.0.0 --metrics-server.port=6070
  --http.addr=0.0.0.0 --http.port=8547 --http.api=net,web3,eth,keepers,flashsimv2
  --ws.addr=0.0.0.0 --ws.port=8548 --ws.api=net,web3,eth,keepers,flashsimv2)
 if [[ -n ${KEEPERS_INIT_SNAPSHOT:-} ]]; then
@@ -30,4 +31,5 @@ exec docker run --rm --name keepers-nitro-robinhood --stop-timeout 300 \
  -v "$KEEPERS_NODE_CONFIG:/run/keepers/node.json:ro" \
  -p "${KEEPERS_BIND_ADDRESS:-127.0.0.1}:8547:8547" \
  -p "${KEEPERS_BIND_ADDRESS:-127.0.0.1}:8548:8548" \
+ -p "127.0.0.1:${KEEPERS_METRICS_PORT:-6070}:6070" \
  "$KEEPERS_IMAGE" "${ARGS[@]}"

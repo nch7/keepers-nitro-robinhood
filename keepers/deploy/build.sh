@@ -9,5 +9,8 @@ if [[ -n $(git status --porcelain --untracked-files=no) ]]; then
 fi
 REVISION=$(git rev-parse HEAD)
 IMAGE=${KEEPERS_IMAGE:-keepers-nitro-robinhood:$REVISION}
-docker build --target nitro-node-slim --build-arg "version=keepers-robinhood-$REVISION" --build-arg "datetime=$(date -u +%FT%TZ)" --build-arg modified=false -t "$IMAGE" .
+# Preserve semver so upstream minimum-version alerts remain active.
+UPSTREAM_VERSION=v3.11.4
+UPSTREAM_DATE=$(git show -s --format=%cI "$UPSTREAM_VERSION")
+docker build --target nitro-node-slim --build-arg "version=$UPSTREAM_VERSION+keepers.$REVISION" --build-arg "datetime=$UPSTREAM_DATE" --build-arg modified=false -t "$IMAGE" .
 printf '%s\n' "$IMAGE"

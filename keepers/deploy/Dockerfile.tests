@@ -1,0 +1,12 @@
+
+# Appended to the upstream Dockerfile by test.sh. No upstream build stages or
+# source files are patched; tests reuse its native builder and pinned libraries.
+FROM node-builder AS keepers-tests
+RUN keepers/deploy/verify-genesis.sh && \
+    go test ./execution/gethexec -run Keepers -count=1 && \
+    go test ./system_tests -run TestKeepers -count=1 && \
+    go test ./broadcastclient -count=1 && \
+    cd go-ethereum && \
+    go test ./rpc -count=1 && \
+    go test ./arbitrum -run TestKeepersRawTransactionConversion -count=1 && \
+    go test ./core -run TestKeepersBaseFeeRelaxationIsOptIn -count=1
