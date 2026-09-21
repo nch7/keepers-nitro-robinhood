@@ -229,6 +229,11 @@ func (s *KeepersService) refreshReadyLocked(now time.Time) {
 			keepersExecutionLag.Update(0)
 		}
 	}
+	if s.latest == nil && s.chain != nil {
+		// Keep the canonical head age live while snapshot readiness is lost.
+		header := s.chain.CurrentBlock()
+		keepersHeadAge.Update(now.Sub(time.Unix(int64(header.Time), 0)).Milliseconds())
+	}
 	if !healthy || !fresh {
 		if s.ready {
 			s.invalidateLocked(true)

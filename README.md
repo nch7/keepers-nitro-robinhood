@@ -1,3 +1,19 @@
+# Keepers Robinhood Nitro
+
+Robinhood mainnet (chain ID 4663), based on Nitro **v3.11.4**, with Keepers
+simulation APIs and locally executed block streams. Custom code lives in
+`execution/gethexec/keepers_*.go`; the Geth compatibility layer is a pinned fork.
+
+- [RPC contracts and chain adaptations](keepers/docs/rpc.md)
+- [Build, deployment, and rollback](keepers/docs/operations.md)
+- [Validation evidence and remaining mainnet acceptance](keepers/docs/validation.md)
+
+Run `keepers/deploy/test.sh` for the Linux build and acceptance tests. Configure
+server-local Ethereum execution/beacon endpoints before deploying. This repository
+is independent of the Keepers Reth forks; it does not expose Base-only APIs.
+
+---
+
 <br />
 <p align="center">
   <a href="https://arbitrum.io/">
