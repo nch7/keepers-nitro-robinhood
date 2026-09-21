@@ -255,6 +255,7 @@ type L1PriceData struct {
 }
 
 type ExecutionEngine struct {
+	keepers *KeepersService
 	stopwaiter.StopWaiter
 
 	bc        *core.BlockChain
@@ -496,6 +497,9 @@ func (s *ExecutionEngine) Reorg(msgIdxOfFirstMsgToAdd arbutil.MessageIndex, newM
 			s.createBlocksMutex.Unlock()
 		}
 	}()
+	if s.keepers != nil {
+		s.keepers.reorg()
+	}
 	lastBlockNumToKeep := s.MessageIndexToBlockNumber(msgIdxOfFirstMsgToAdd - 1)
 	// We can safely cast lastBlockNumToKeep to a uint64 as it comes from MessageIndexToBlockNumber
 	lastBlockToKeep := s.bc.GetBlockByNumber(uint64(lastBlockNumToKeep))
@@ -1069,6 +1073,9 @@ func (s *ExecutionEngine) appendBlock(block *types.Block, statedb *state.StateDB
 			return errors.New("geth rejected block as non-canonical")
 		}
 	}
+	if s.keepers != nil {
+		s.keepers.publish(block, receipts)
+	}
 	blockWriteToDbTimer.Update(time.Since(startTime).Nanoseconds())
 	baseFeeGauge.Update(block.BaseFee().Int64())
 	txCountHistogram.Update(int64(len(block.Transactions()) - 1))
@@ -1225,7 +1232,12 @@ func (s *ExecutionEngine) DigestMessage(msgIdx arbutil.MessageIndex, msg *arbost
 	return s.digestMessageWithBlockMutex(msgIdx, msg, msgForPrefetch)
 }
 
-func (s *ExecutionEngine) digestMessageWithBlockMutex(msgIdxToDigest arbutil.MessageIndex, msg *arbostypes.MessageWithMetadata, msgForPrefetch *arbostypes.MessageWithMetadata) (*execution.MessageResult, error) {
+func (s *ExecutionEngine) digestMessageWithBlockMutex(msgIdxToDigest arbutil.MessageIndex, msg *arbostypes.MessageWithMetadata, msgForPrefetch *arbostypes.MessageWithMetadata) (result *execution.MessageResult, resultErr error) {
+	defer func() {
+		if resultErr != nil && s.keepers != nil {
+			s.keepers.failSnapshot(resultErr)
+		}
+	}()
 	currentHeader, err := s.getCurrentHeader()
 	if err != nil {
 		return nil, err

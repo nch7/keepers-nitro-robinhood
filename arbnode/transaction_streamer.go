@@ -1653,3 +1653,11 @@ func (s *TransactionStreamer) Start(ctxIn context.Context) error {
 	s.LaunchThread(s.backfillTrackersForMissingBlockMetadata)
 	return stopwaiter.CallIterativelyWith[struct{}](&s.StopWaiterSafe, s.executeMessages, s.newMessageNotifier)
 }
+
+// KeepersFeedStatus is an optional in-process observer. Split execution deployments
+// do not advertise Keepers snapshot readiness without a local feed observer.
+func (s *TransactionStreamer) KeepersFeedStatus(source string, healthy bool, sequence uint64) {
+	if observer, ok := s.exec.(interface{ KeepersFeedStatus(string, bool, uint64) }); ok {
+		observer.KeepersFeedStatus(source, healthy, sequence)
+	}
+}

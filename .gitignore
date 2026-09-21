@@ -40,3 +40,6 @@ tmp/*
 .env
 go.work
 go.work.sum
+
+# Local Python diagnostics
+keepers/tools/__pycache__/

@@ -1,0 +1,9 @@
+{
+  "nitroVersion": "v3.11.4",
+  "nitroCommit": "7d5ac271b400f710f6267ad759c6afc3e12d7059",
+  "chainId": 4663,
+  "parentChainId": 1,
+  "verifiedDate": "2026-09-21",
+  "operatorRecommendation": "https://docs.robinhood.com/chain/notices-and-upgrades/",
+  "configSource": "https://cdn.robinhood.com/assets/generated_assets/hoodchain_docsite/chain-node-configs/"
+}

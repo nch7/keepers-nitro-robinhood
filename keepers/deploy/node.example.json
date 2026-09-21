@@ -1,0 +1,16 @@
+{
+  "parent-chain": {
+    "connection": {"url": "https://YOUR_ETHEREUM_EXECUTION_RPC"},
+    "blob-client": {"beacon-url": "https://YOUR_ETHEREUM_BEACON_RPC"}
+  },
+  "execution": {
+    "keepers": {
+      "concurrency": 4,
+      "max-bundle": 256,
+      "queue-size": 1024,
+      "timeout": "5s",
+      "max-head-age": "20s",
+      "reexec": 128
+    }
+  }
+}

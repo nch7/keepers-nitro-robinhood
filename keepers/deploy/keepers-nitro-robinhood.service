@@ -1,0 +1,22 @@
+[Unit]
+Description=Keepers Robinhood Nitro node
+After=network-online.target docker.service
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=keepers
+Group=keepers
+SupplementaryGroups=docker
+EnvironmentFile=/etc/keepers-nitro-robinhood/node.env
+WorkingDirectory=/opt/keepers-nitro-robinhood
+ExecStart=/opt/keepers-nitro-robinhood/keepers/deploy/start.sh
+ExecStop=/usr/bin/docker stop --time 300 keepers-nitro-robinhood
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=330
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target

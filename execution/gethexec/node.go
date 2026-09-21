@@ -119,6 +119,7 @@ func TransactionFilteringConfigAddOptions(prefix string, f *pflag.FlagSet) {
 }
 
 type Config struct {
+	Keepers                     KeepersConfig               `koanf:"keepers"`
 	ParentChainReader           headerreader.Config         `koanf:"parent-chain-reader" reload:"hot"`
 	Sequencer                   SequencerConfig             `koanf:"sequencer" reload:"hot"`
 	RecordingDatabase           BlockRecorderConfig         `koanf:"recording-database"`
@@ -146,6 +147,9 @@ type Config struct {
 }
 
 func (c *Config) Validate() error {
+	if c.Keepers.Enabled && (c.Keepers.Concurrency < 1 || c.Keepers.MaxBundle < 1 || c.Keepers.QueueSize < 1 || c.Keepers.Timeout <= 0 || c.Keepers.MaxHeadAge <= 0) {
+		return errors.New("invalid Keepers limits")
+	}
 	if err := c.Caching.Validate(); err != nil {
 		return err
 	}
@@ -179,6 +183,7 @@ func (c *Config) Validate() error {
 }
 
 func ConfigAddOptions(prefix string, f *pflag.FlagSet) {
+	keepersConfigOptions(prefix+".keepers", f)
 	arbitrum.ConfigAddOptions(prefix+".rpc", f)
 	TxIndexerConfigAddOptions(prefix+".tx-indexer", f)
 	SequencerConfigAddOptions(prefix+".sequencer", f)
@@ -219,6 +224,7 @@ func LiveTracingConfigAddOptions(prefix string, f *pflag.FlagSet) {
 }
 
 var ConfigDefault = Config{
+	Keepers:                   DefaultKeepersConfig,
 	RPC:                       arbitrum.DefaultConfig,
 	TxIndexer:                 DefaultTxIndexerConfig,
 	Sequencer:                 DefaultSequencerConfig,
@@ -257,6 +263,7 @@ type ConfigFetcher interface {
 }
 
 type ExecutionNode struct {
+	Keepers *KeepersService
 	stopwaiter.StopWaiter
 	ExecutionDB              ethdb.Database
 	Backend                  *arbitrum.Backend
@@ -493,6 +500,19 @@ func CreateExecutionNode(
 		})
 	}
 
+	if config.Keepers.Enabled {
+		service, err := newKeepersService(config.Keepers, backend.APIBackend(), execEngine, stack.ResolvePath("keepers-payload-counter"))
+		if err != nil {
+			return nil, err
+		}
+		execNode.Keepers = service
+		execEngine.keepers = service
+		apis = append(apis,
+			rpc.API{Namespace: "eth", Service: &KeepersEthAPI{service: service}},
+			rpc.API{Namespace: "keepers", Service: &KeepersAPI{service: service}},
+			rpc.API{Namespace: "flashsimv2", Service: &KeepersFlashAPI{service: service}},
+		)
+	}
 	stack.RegisterAPIs(apis)
 
 	return execNode, nil
@@ -566,6 +586,9 @@ func (n *ExecutionNode) Start(ctxIn context.Context) error {
 		n.AddressFilterService.Start(ctx)
 	}
 
+	if n.Keepers != nil {
+		n.Keepers.start(ctx)
+	}
 	err = n.ExecEngine.Start(ctx)
 	if err != nil {
 		return fmt.Errorf("error starting execution engine: %w", err)
@@ -593,6 +616,9 @@ func (n *ExecutionNode) StopAndWait() {
 		n.AddressFilterService.StopAndWait()
 	}
 
+	if n.Keepers != nil {
+		n.Keepers.stop()
+	}
 	n.bulkBlockMetadataFetcher.StopAndWait()
 	// TODO after separation
 	// n.Stack.StopRPC() // does nothing if not running

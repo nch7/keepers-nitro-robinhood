@@ -65,6 +65,7 @@ var FeedConfigDefault = FeedConfig{
 }
 
 type Config struct {
+	ApplicationTimeout      time.Duration            `koanf:"application-timeout" reload:"hot"`
 	ReconnectInitialBackoff time.Duration            `koanf:"reconnect-initial-backoff" reload:"hot"`
 	ReconnectMaximumBackoff time.Duration            `koanf:"reconnect-maximum-backoff" reload:"hot"`
 	RequireChainId          bool                     `koanf:"require-chain-id" reload:"hot"`
@@ -83,6 +84,7 @@ func (c *Config) Enable() bool {
 type ConfigFetcher func() *Config
 
 func ConfigAddOptions(prefix string, f *pflag.FlagSet) {
+	f.Duration(prefix+".application-timeout", 0, "reconnect when no valid feed data arrives even if ping/pong continues (0 disables)")
 	f.Duration(prefix+".reconnect-initial-backoff", DefaultConfig.ReconnectInitialBackoff, "initial duration to wait before reconnect")
 	f.Duration(prefix+".reconnect-maximum-backoff", DefaultConfig.ReconnectMaximumBackoff, "maximum duration to wait before reconnect")
 	f.Bool(prefix+".require-chain-id", DefaultConfig.RequireChainId, "require chain id to be present on connect")
@@ -369,8 +371,20 @@ func (bc *BroadcastClient) connect(ctx context.Context, nextSeqNum arbutil.Messa
 	return earlyFrameData, nil
 }
 
+func (bc *BroadcastClient) notifyKeepersFeed(healthy bool) {
+	if observer, ok := bc.txStreamer.(interface{ KeepersFeedStatus(string, bool, uint64) }); ok {
+		sequence := uint64(0)
+		if bc.nextSeqNum > 0 {
+			sequence = uint64(bc.nextSeqNum - 1)
+		}
+		observer.KeepersFeedStatus(bc.websocketUrl, healthy, sequence)
+	}
+}
+
 func (bc *BroadcastClient) startBackgroundReader(earlyFrameData io.Reader) {
 	bc.LaunchThread(func(ctx context.Context) {
+		defer bc.notifyKeepersFeed(false)
+		lastApplicationMessage := time.Now()
 		connected := false
 		sourcesDisconnectedGauge.Inc(1)
 		backoffDuration := bc.config().ReconnectInitialBackoff
@@ -388,8 +402,20 @@ func (bc *BroadcastClient) startBackgroundReader(earlyFrameData io.Reader) {
 			var op ws.OpCode
 			var err error
 			config := bc.config()
-			msg, op, err = wsbroadcastserver.ReadData(ctx, bc.conn, earlyFrameData, config.Timeout, ws.StateClientSide, bc.compression, flateReader)
+			readTimeout := config.Timeout
+			if config.ApplicationTimeout > 0 {
+				remaining := config.ApplicationTimeout - time.Since(lastApplicationMessage)
+				if remaining <= 0 {
+					err = errors.New("application feed idle timeout")
+				} else if remaining < readTimeout {
+					readTimeout = remaining
+				}
+			}
+			if err == nil {
+				msg, op, err = wsbroadcastserver.ReadData(ctx, bc.conn, earlyFrameData, readTimeout, ws.StateClientSide, bc.compression, flateReader)
+			}
 			if err != nil {
+				bc.notifyKeepersFeed(false)
 				if bc.isShuttingDown() {
 					return
 				}
@@ -420,6 +446,7 @@ func (bc *BroadcastClient) startBackgroundReader(earlyFrameData io.Reader) {
 					bc.firstReconnectAttempt = false
 					log.Info("First reconnection attempt, skipping backoff", "url", bc.websocketUrl)
 					earlyFrameData = bc.retryConnect(ctx)
+					lastApplicationMessage = time.Now()
 					continue
 				}
 				timer := time.NewTimer(backoffDuration)
@@ -433,6 +460,7 @@ func (bc *BroadcastClient) startBackgroundReader(earlyFrameData io.Reader) {
 				case <-timer.C:
 				}
 				earlyFrameData = bc.retryConnect(ctx)
+				lastApplicationMessage = time.Now()
 				continue
 			}
 			backoffDuration = bc.config().ReconnectInitialBackoff
@@ -487,6 +515,10 @@ func (bc *BroadcastClient) startBackgroundReader(earlyFrameData io.Reader) {
 								return
 							}
 							log.Error("Error adding message from Sequencer Feed", "err", err)
+							bc.notifyKeepersFeed(false)
+						} else {
+							lastApplicationMessage = time.Now()
+							bc.notifyKeepersFeed(true)
 						}
 					}
 					if res.ConfirmedSequenceNumberMessage != nil && bc.confirmedSequenceNumberListener != nil {
