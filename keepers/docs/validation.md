@@ -25,3 +25,18 @@ percentiles, and server rollout remain operational acceptance gates. No mainnet
 performance numbers or production-readiness claim is inferred from unit tests.
 The optional OP endpoint checker validates shared result shape; a deployed OP/Nitro
 golden-fixture acceptance run still belongs to the shadow rollout.
+
+## Linux validation scope
+
+The upstream Linux ARM64 `node-builder` completed, and the in-build Keepers test
+stage passed against implementation commit `1919d2354`: genesis verification,
+execution unit tests, ArbOS 61 system tests, the full broadcast-client suite,
+the full Geth RPC suite, signed-input conversion, and base-fee isolation tests.
+
+Commit `2c9e095cf` subsequently adds only a five-line canonical head-age metric
+update while snapshots are unavailable, plus README documentation. The affected
+execution tests passed again with `-race` on macOS ARM64. A second complete Linux
+rebuild was deliberately stopped after it began re-downloading upstream toolchains;
+no second full Linux result is claimed. The checked-in runner is unchanged from
+the successful Linux run. Run it on the selected deployment architecture before
+cutover, alongside mainnet shadow/reference and load checks.
